@@ -1,51 +1,54 @@
 package com.example.demo.config;
 
-import com.example.demo.repository.UserRepository;
+import com.example.demo.service.JwtTokenProvider;
+import com.example.demo.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
-    // 비밀번호 암호화용 Bean 등록
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailsService customUserDetailsService;
+
+    public SecurityConfig(JwtTokenProvider jwtTokenProvider, CustomUserDetailsService customUserDetailsService) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.customUserDetailsService = customUserDetailsService;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 사용자 인증을 위한 UserDetailsService 설정
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+    public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
+                .userDetailsService(customUserDetailsService)
+                .passwordEncoder(passwordEncoder)
+                .and()
+                .build();
     }
 
-    // Security 설정
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // CSRF 비활성화 (필요 시 적절히 수정)
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/signup", "/resources/**").permitAll()  // 인증 불필요한 경로 설정
-                        .anyRequest().authenticated()  // 나머지 요청은 인증 필요
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")  // 커스텀 로그인 페이지 경로 설정
-                        .defaultSuccessUrl("/mypage", true)  // 로그인 성공 시 이동 페이지
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")  // 로그아웃 경로 설정
-                        .logoutSuccessUrl("/login")  // 로그아웃 성공 후 이동 경로
-                        .invalidateHttpSession(true)  // 세션 무효화
-                        .deleteCookies("JSESSIONID")  // 쿠키 삭제
-                        .permitAll()
-                );
+                        .requestMatchers("/api/auth/**", "/signup").permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
