@@ -37,6 +37,32 @@ dependencies {
 	implementation 'org.springframework.security:spring-security-crypto' // 암호화용
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 
+	// Spring Boot Web Starter
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Spring Boot Data JPA Starter
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// MySQL JDBC Driver
+	implementation 'mysql:mysql-connector-java:8.0.29'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Spring Boot Starter Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// Development tools
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	implementation 'org.locationtech.jts:jts-core:1.18.2' // JTS 라이브러리 추가
+
+	implementation 'org.springframework.boot:spring-boot-starter-security'//Spring Security
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
 
 }
 
