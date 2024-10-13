@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.dangerousObjectDetection.entity.User;
-import com.example.dangerousObjectDetection.repository.UserRepository;
+import com.example.demo.entity.User;
+import com.example.demo.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
