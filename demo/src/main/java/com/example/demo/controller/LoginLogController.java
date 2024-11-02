@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.LoginLog;
 import com.example.demo.repository.LoginLogRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,15 @@ public class LoginLogController {
     }
 
     @PostMapping
-    public ResponseEntity<LoginLog> createLoginLog(@RequestBody LoginLog loginLog) {
+    public ResponseEntity<LoginLog> createLoginLog(@RequestBody LoginLog loginLog, HttpServletRequest request) {
+        // 클라이언트의 실제 IP 주소 추출
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isEmpty()) {
+            clientIp = request.getRemoteAddr();
+        }
+        loginLog.setIpAddress(clientIp);
+
+        // 로그인 로그 저장
         LoginLog savedLog = loginLogRepository.save(loginLog);
         return ResponseEntity.ok(savedLog);
     }

@@ -35,5 +35,6 @@ public class User {
     private List<Report> reports;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<LoginLog> loginLogs;
 }
