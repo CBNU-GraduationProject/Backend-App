@@ -34,4 +34,11 @@ public class LoginLogController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    // 특정 사용자의 로그인 기록 조회
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<LoginLog>> getLoginLogsByUserId(@PathVariable Long userId) {
+        List<LoginLog> logs = loginLogRepository.findByUserId(userId);
+        return ResponseEntity.ok(logs);
+    }
 }
