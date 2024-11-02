@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ReportDto;
 import com.example.demo.entity.Report;
 import com.example.demo.entity.User;
 import com.example.demo.repository.ReportRepository;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -23,35 +25,20 @@ public class ReportController {
 
     @PostMapping
     public Report createReport(@RequestBody Report report) {
-        // 사용자 이메일로 사용자 찾기
         User user = userRepository.findByEmail(report.getUser().getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Report 객체에 user를 설정
-        report.setUser(user); // 사용자 정보를 Report에 설정
-
-        // 위도 및 경도 설정 (이제 Location 객체가 아닌 값으로 저장)
-        report.setLatitude(report.getLatitude());
-        report.setLongitude(report.getLongitude());
-
-        // Report 저장
+        report.setUser(user);
         return reportRepository.save(report);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Report>> getAllReports() {
-        return ResponseEntity.ok(reportRepository.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Report> getReportById(@PathVariable Long id) {
-        return reportRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
     @GetMapping("/user/{userEmail}")
-    public ResponseEntity<List<Report>> getReportsByUserEmail(@PathVariable String userEmail) {
-        return ResponseEntity.ok(reportRepository.findByUserEmail(userEmail));
+    public ResponseEntity<List<ReportDto>> getReportsByUserEmail(@PathVariable String userEmail) {
+        List<Report> reports = reportRepository.findByUserEmail(userEmail);
+        List<ReportDto> reportDtos = reports.stream()
+                .map(report -> new ReportDto(report.getId(), report.getDescription(), report.getLatitude(), report.getLongitude()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(reportDtos);
     }
 }
+

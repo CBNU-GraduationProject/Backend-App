@@ -42,7 +42,8 @@ public class SecurityConfig {
                         //.anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                         .anyRequest().permitAll() // 모든 요청에 대해 허용
                 );
-                //.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),UsernamePasswordAuthenticationFilter.class);
+        //.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),UsernamePasswordAuthenticationFilter.class);
+        //JwtAuthenticationFilter코드를 활성화 하면 500에러로 막힘
         return http.build();
     }
 
