@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
     // 특정 사용자의 신고 내역 조회
-    List<Report> findByUserId(Long userId);
+    List<Report> findByUserEmail(String userEmail);
 }

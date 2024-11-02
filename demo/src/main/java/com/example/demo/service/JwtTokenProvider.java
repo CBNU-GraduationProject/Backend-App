@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Date; // 이 줄을 추가하세요.
+import java.util.Date;
 
 @Service
 public class JwtTokenProvider {
@@ -45,15 +45,16 @@ public class JwtTokenProvider {
     public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
-                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // 만료 시간 추가
-                .signWith(secretKey)
+                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // 만료 시간 설정
+                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명 알고리즘 명시
                 .compact();
     }
 
-    // 추가: JWT 토큰에서 사용자 이름을 추출하는 메서드
+    // JWT 토큰에서 사용자 이름을 추출하는 메서드
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject();
@@ -67,7 +68,7 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;

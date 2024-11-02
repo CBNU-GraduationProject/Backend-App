@@ -37,12 +37,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+                        //.requestMatchers("/api/auth/**").permitAll() // 회원가입/로그인 경로만 모두 허용
+                        //.requestMatchers("/api/reports/**").authenticated() // `/api/reports`는 인증된 사용자만 접근 가능
+                        //.anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
+                        .anyRequest().permitAll() // 모든 요청에 대해 허용
+                );
+                //.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
 
 }

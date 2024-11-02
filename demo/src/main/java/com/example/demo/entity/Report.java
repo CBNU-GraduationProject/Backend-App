@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,19 +19,17 @@ public class Report {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user; // User 객체와의 관계 설정
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
     @Lob
-    private byte[] image;  // 이미지 파일을 BLOB으로 저장
+    private byte[] image; // 이미지 파일을 BLOB으로 저장
 
-    @ManyToOne
-    @JoinColumn(name = "location_id", nullable = false)
-    private Location location;
+    private double latitude; // 위도
+    private double longitude; // 경도
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
-

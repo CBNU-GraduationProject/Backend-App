@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+/*package com.example.demo.controller;
 
 import com.example.demo.entity.Location;
 import com.example.demo.repository.LocationRepository;
@@ -34,5 +34,5 @@ public class LocationController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-}
+}*/
 
