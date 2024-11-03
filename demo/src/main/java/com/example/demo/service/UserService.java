@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +37,7 @@ public class UserService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, rawPassword)
         );
-        return jwtTokenProvider.generateToken(authentication.getName());
+        return jwtTokenProvider.createToken(authentication.getName()); // createToken으로 변경
     }
+
 }
