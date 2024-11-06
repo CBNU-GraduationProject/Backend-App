@@ -1,81 +1,66 @@
-package com.example.demo.service;
+package com.example.demo.config;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import jakarta.annotation.PostConstruct;
+import io.jsonwebtoken.Claims;
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
+
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 
-@Service
+@Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-
-    @Value("${jwt.expiration}")
-    private long expiration;
-
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final UserDetailsService userDetailsService;
     private SecretKey secretKey;
-
-    public JwtTokenProvider(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    private final long tokenValidityInMilliseconds = 3600000; // 1시간 유효
 
     @PostConstruct
     public void init() {
-        // jwtSecret가 최소 32바이트(256비트)인지 확인
-        if (jwtSecret.length() < 32) {
-            throw new IllegalArgumentException("JWT 비밀 키는 최소 32자 이상이어야 합니다.");
-        }
-        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
-    // JWT 생성 메서드
-    public String generateToken(String username) {
+    public String createToken(String subject) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
+
         return Jwts.builder()
-                .setSubject(username)
-                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // 만료 시간 설정
-                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명 알고리즘 명시
+                .setSubject(subject)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-    // JWT 토큰에서 사용자 이름을 추출하는 메서드
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
-    }
-
-    public Authentication getAuthentication(String token) {
-        String username = getUsernameFromToken(token);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(secretKey).build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
             return false;
         }
     }
 
-    public String encodePassword(String rawPassword) {
-        return passwordEncoder.encode(rawPassword);
+    public String getUsernameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build()
+                .parseClaimsJws(token).getBody();
+        return claims.getSubject();
+    }
+
+    /**
+     * HTTP 요청 헤더에서 토큰을 추출
+     *
+     * @param request HTTP 요청
+     * @return 토큰 문자열 (헤더에 없으면 null 반환)
+     */
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // "Bearer " 이후의 토큰 부분 반환
+        }
+        return null;
     }
 }
