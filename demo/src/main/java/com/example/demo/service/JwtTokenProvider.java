@@ -1,4 +1,4 @@
-package com.example.demo.config;
+package com.example.demo.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -15,7 +15,7 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private SecretKey secretKey;
-    private final long tokenValidityInMilliseconds = 3600000; // 1시간 유효
+    private final long tokenValidityInMilliseconds = 7200000; // 1시간 유효
 
     @PostConstruct
     public void init() {

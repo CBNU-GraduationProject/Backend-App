@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.config.JwtTokenProvider;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

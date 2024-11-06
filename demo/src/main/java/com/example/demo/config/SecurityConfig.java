@@ -1,8 +1,9 @@
 package com.example.demo.config;
 
 
-import com.example.demo.config.JwtTokenProvider;
+
 import com.example.demo.service.JwtAuthenticationFilter;
+import com.example.demo.service.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // 회원가입/로그인 경로만 모두 허용
-                        .requestMatchers("/api/reports/**").permitAll() // `/api/reports`는 인증된 사용자만 접근 가능
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
 
                 )

@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -28,10 +31,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody User user) {
         String token = userService.login(user.getEmail(), user.getPassword());
-        return token != null
-                ? ResponseEntity.ok(token)
-                : ResponseEntity.status(401).body("이메일 또는 비밀번호가 올바르지 않습니다.");
+        Long userId = userService.findUserIdByEmail(user.getEmail()); // userId 가져오기
+
+        if (token != null && userId != null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("userId", userId);
+            return ResponseEntity.ok(response); // JSON 형식으로 반환
+        } else {
+            return ResponseEntity.status(401).body("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
     }
+
 }

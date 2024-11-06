@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,7 +21,9 @@ public class User {
     private Long id;
 
     private String name;
-    private int age;
+
+    private LocalDate birthDate; // 생년월일 추가
+
     private String school;
 
     @Column(unique = true, nullable = false)
