@@ -18,15 +18,17 @@ public class ReportRequestDto {
     private Double longitude; // 경도
     private String image; // Base64로 인코딩된 이미지
     private LocalDateTime createdAt; // 신고 날짜
+    private String state; // 상태 정보 추가
     private UserDto user; // 사용자 정보 추가
 
-    public ReportRequestDto(Long id, String description, Double latitude, Double longitude, byte[] image, LocalDateTime createdAt) {
+    public ReportRequestDto(Long id, String description, Double latitude, Double longitude, byte[] image, LocalDateTime createdAt, String state) {
         this.id = id;
         this.description = description;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.image = image != null ? Base64.getEncoder().encodeToString(image) : null; // imageBase64 사용
+        this.image = image != null ? Base64.getEncoder().encodeToString(image) : null;
         this.createdAt = createdAt;
+        this.state = state;
     }
 
     @Data

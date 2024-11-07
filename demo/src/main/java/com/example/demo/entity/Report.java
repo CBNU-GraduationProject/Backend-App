@@ -30,6 +30,9 @@ public class Report {
     private double latitude; // 위도
     private double longitude; // 경도
 
+    @Column(nullable = false, length = 50)
+    private String state = "미조치"; // state 필드 기본값 설정
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

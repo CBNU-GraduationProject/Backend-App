@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,6 +35,7 @@ public class ReportController {
         report.setDescription(reportRequestDto.getDescription());
         report.setLatitude(reportRequestDto.getLatitude());
         report.setLongitude(reportRequestDto.getLongitude());
+        report.setState(reportRequestDto.getState() != null ? reportRequestDto.getState() : "미조치");
 
         if (reportRequestDto.getImage() != null) {
             report.setImage(Base64.getDecoder().decode(reportRequestDto.getImage()));
@@ -52,9 +54,28 @@ public class ReportController {
                         report.getLatitude(),
                         report.getLongitude(),
                         report.getImage(),
-                        report.getCreatedAt()
+                        report.getCreatedAt(),
+                        report.getState()
                 ))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(reportDtos);
     }
+
+    @PatchMapping("/{id}/state")
+    public ResponseEntity<Report> updateReportState(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+
+        String state = body.get("state"); // 요청 본문에서 state 값을 추출
+
+        if (state != null) {
+            report.setState(state);
+            reportRepository.save(report);
+        } else {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        return ResponseEntity.ok(report);
+    }
+
 }

@@ -29,11 +29,13 @@ public class UserController {
     }
 
     // 사용자 정보 업데이트 (학교, 비밀번호만 변경)
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         return userRepository.findById(id).map(user -> {
             // 학교 정보 업데이트
-            user.setSchool(userDetails.getSchool());
+            if (userDetails.getSchool() != null && !userDetails.getSchool().isEmpty()) {
+                user.setSchool(userDetails.getSchool());
+            }
 
             // 비밀번호 업데이트 (암호화 처리)
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {

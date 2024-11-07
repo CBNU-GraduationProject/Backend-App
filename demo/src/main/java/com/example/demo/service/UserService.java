@@ -47,5 +47,10 @@ public class UserService {
         );
         return jwtTokenProvider.createToken(authentication.getName()); // createToken으로 변경
     }
+    public User findById(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        return user.orElse(null); // 사용자가 없으면 null을 반환
+    }
+
 
 }
