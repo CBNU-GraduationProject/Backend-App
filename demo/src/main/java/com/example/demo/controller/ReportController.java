@@ -43,6 +43,22 @@ public class ReportController {
 
         return reportRepository.save(report);
     }
+    @GetMapping
+    public ResponseEntity<List<ReportRequestDto>> getAllReports() {
+        List<Report> reports = reportRepository.findAll();
+        List<ReportRequestDto> reportDtos = reports.stream()
+                .map(report -> new ReportRequestDto(
+                        report.getId(),
+                        report.getDescription(),
+                        report.getLatitude(),
+                        report.getLongitude(),
+                        report.getImage(),
+                        report.getCreatedAt(),
+                        report.getState()
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(reportDtos);
+    }
 
     @GetMapping("/user/{userEmail}")
     public ResponseEntity<List<ReportRequestDto>> getReportsByUserEmail(@PathVariable String userEmail) {

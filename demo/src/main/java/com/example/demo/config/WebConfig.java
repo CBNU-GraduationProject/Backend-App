@@ -9,8 +9,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://127.0.0.1:5500", "http://172.30.64.236:5000","https://heron-good-curiously.ngrok-free.app") // 필요한 출처 추가
-                .allowedMethods("GET", "POST", "PUT", "DELETE","PATCH")
+                .allowedOrigins("http://localhost:5500", "http://localhost:3000",
+                        "http://172.30.64.236:5000", "https://heron-good-curiously.ngrok-free.app",
+                        "https://kickx2-app-g3dkagdbhuaqgbh3.koreacentral-01.azurewebsites.net") // Azure 도메인 추가
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
                 .allowCredentials(true);
+
     }
 }
