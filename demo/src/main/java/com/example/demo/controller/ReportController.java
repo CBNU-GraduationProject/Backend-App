@@ -5,13 +5,22 @@ import com.example.demo.entity.Report;
 import com.example.demo.entity.User;
 import com.example.demo.repository.ReportRepository;
 import com.example.demo.repository.UserRepository;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Base64;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+import com.example.demo.entity.HazardData;  // 해당 임포트가 있는지 확인하세요
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -19,43 +28,84 @@ public class ReportController {
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
 
-    public ReportController(ReportRepository reportRepository, UserRepository userRepository) {
+    @Value("${hazarddata.service.url}") // HazardData 서비스 URL
+    private String hazardDataServiceUrl;
+
+    public ReportController(ReportRepository reportRepository, UserRepository userRepository, RestTemplate restTemplate) {
         this.reportRepository = reportRepository;
         this.userRepository = userRepository;
+        this.restTemplate = restTemplate;
+    }
+
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<String> approveReport(@PathVariable Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+
+        // HazardData로 변환할 데이터 준비
+        MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
+        formData.add("hazardType", report.getDescription());
+        formData.add("gps", report.getLatitude() + "," + report.getLongitude());
+        formData.add("dates", report.getCreatedAt().toString());
+        formData.add("state", "미조치");
+
+        if (report.getImage() != null) {
+            // 이미지 파일을 byte[]로 변환
+            ByteArrayResource imageResource = new ByteArrayResource(report.getImage()) {
+                @Override
+                public String getFilename() {
+                    return "image.jpg"; // 이미지 파일 이름 지정
+                }
+            };
+            formData.add("photo", imageResource);
+        }
+
+        // HTTP 요청 준비
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
+
+        // HazardData 서비스로 POST 요청 전송
+        String url = hazardDataServiceUrl + "/api/hazarddata/add";
+        restTemplate.postForObject(url, requestEntity, String.class);
+
+        return ResponseEntity.ok("Report approved and added to hazard data!");
     }
 
     @PostMapping
-    public Report createReport(@RequestBody ReportRequestDto reportRequestDto) {
-        User user = userRepository.findByEmail(reportRequestDto.getUser().getEmail())
+    public ResponseEntity<ReportRequestDto> createReport(
+            @RequestParam("description") String description,
+            @RequestParam("latitude") Double latitude,
+            @RequestParam("longitude") Double longitude,
+            @RequestParam(value = "state", required = false) String state,
+            @RequestParam("userEmail") String userEmail,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Report report = new Report();
         report.setUser(user);
-        report.setDescription(reportRequestDto.getDescription());
-        report.setLatitude(reportRequestDto.getLatitude());
-        report.setLongitude(reportRequestDto.getLongitude());
-        report.setState(reportRequestDto.getState() != null ? reportRequestDto.getState() : "미조치");
+        report.setDescription(description);
+        report.setLatitude(latitude);
+        report.setLongitude(longitude);
+        report.setState(state != null ? state : "미조치");
 
-        if (reportRequestDto.getImage() != null) {
-            report.setImage(Base64.getDecoder().decode(reportRequestDto.getImage()));
+        if (image != null && !image.isEmpty()) {
+            report.setImage(image.getBytes());
         }
 
-        return reportRepository.save(report);
+        Report savedReport = reportRepository.save(report);
+        return ResponseEntity.ok(convertToDto(savedReport));
     }
+
     @GetMapping
     public ResponseEntity<List<ReportRequestDto>> getAllReports() {
         List<Report> reports = reportRepository.findAll();
         List<ReportRequestDto> reportDtos = reports.stream()
-                .map(report -> new ReportRequestDto(
-                        report.getId(),
-                        report.getDescription(),
-                        report.getLatitude(),
-                        report.getLongitude(),
-                        report.getImage(),
-                        report.getCreatedAt(),
-                        report.getState()
-                ))
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(reportDtos);
     }
@@ -64,26 +114,17 @@ public class ReportController {
     public ResponseEntity<List<ReportRequestDto>> getReportsByUserEmail(@PathVariable String userEmail) {
         List<Report> reports = reportRepository.findByUserEmail(userEmail);
         List<ReportRequestDto> reportDtos = reports.stream()
-                .map(report -> new ReportRequestDto(
-                        report.getId(),
-                        report.getDescription(),
-                        report.getLatitude(),
-                        report.getLongitude(),
-                        report.getImage(),
-                        report.getCreatedAt(),
-                        report.getState()
-                ))
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(reportDtos);
     }
 
     @PatchMapping("/{id}/state")
-    public ResponseEntity<Report> updateReportState(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<ReportRequestDto> updateReportState(@PathVariable Long id, @RequestBody Map<String, String> body) {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
 
-        String state = body.get("state"); // 요청 본문에서 state 값을 추출
-
+        String state = body.get("state");
         if (state != null) {
             report.setState(state);
             reportRepository.save(report);
@@ -91,7 +132,19 @@ public class ReportController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        return ResponseEntity.ok(report);
+        return ResponseEntity.ok(convertToDto(report));
     }
 
+    private ReportRequestDto convertToDto(Report report) {
+        return new ReportRequestDto(
+                report.getId(),
+                report.getDescription(),
+                report.getLatitude(),
+                report.getLongitude(),
+                report.getImage(),
+                report.getCreatedAt(),
+                report.getState(),
+                new ReportRequestDto.UserDto(report.getUser().getEmail())
+        );
+    }
 }

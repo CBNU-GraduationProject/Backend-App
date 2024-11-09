@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
-                        .requestMatchers("/api/reports").permitAll()
+                        //.requestMatchers("/api/reports/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/reports/{id}/state").permitAll() // URL 수정
                         .anyRequest().authenticated()
                 )
