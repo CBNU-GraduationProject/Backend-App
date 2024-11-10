@@ -19,19 +19,22 @@ public class Report {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // User 객체와의 관계 설정
+    private User user;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
     @Lob
-    private byte[] image; // 이미지 파일을 BLOB으로 저장
+    private byte[] image;
 
-    private double latitude; // 위도
-    private double longitude; // 경도
+    private double latitude;
+    private double longitude;
 
     @Column(nullable = false, length = 50)
-    private String state = "미조치"; // state 필드 기본값 설정
+    private String state = "미조치";
+
+    @Column(nullable = false, length = 20)
+    private String status = "반려"; // 기본값을 "반려"로 설정
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

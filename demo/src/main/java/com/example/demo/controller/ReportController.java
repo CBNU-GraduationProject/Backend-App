@@ -52,6 +52,8 @@ public class ReportController {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
 
+        report.setStatus("승인"); // 승인 상태로 변경
+        reportRepository.save(report); // 상태 업데이트
 
         MultiValueMap<String, Object> formData = getStringObjectMultiValueMap(report);
 
@@ -60,7 +62,6 @@ public class ReportController {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
 
-        // HazardData 서비스로 POST 요청 전송
         String url = hazardDataServiceUrl + "/api/hazarddata/add";
         restTemplate.postForObject(url, requestEntity, String.class);
 
@@ -116,7 +117,7 @@ public class ReportController {
     @CrossOrigin(origins = "https://kickx2-frontend-b2evfnacdxh3fjd4.koreacentral-01.azurewebsites.net/")
     @GetMapping
     public ResponseEntity<List<ReportRequestDto>> getAllReports() {
-        List<Report> reports = reportRepository.findAll();
+        List<Report> reports = reportRepository.findByStatus("반려"); // 반려 상태인 내역만 조회
         List<ReportRequestDto> reportDtos = reports.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -155,8 +156,7 @@ public class ReportController {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
 
-        // 보고서 삭제
-        reportRepository.delete(report);
+        reportRepository.delete(report); // 반려 상태로 삭제
         return ResponseEntity.ok("Report rejected and deleted!");
     }
     private ReportRequestDto convertToDto(Report report) {

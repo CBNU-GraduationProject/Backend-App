@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByUserEmail(String userEmail);
-
+    List<Report> findByStatus(String status);
     // Method to find a report by its ID
     Optional<Report> findById(Long id);
 }
