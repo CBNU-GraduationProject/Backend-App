@@ -29,8 +29,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
-                        //.requestMatchers("/api/reports/**").permitAll()
+                        .requestMatchers("/api/reports/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/reports/{id}/state").permitAll() // URL 수정
+                        .requestMatchers(HttpMethod.PATCH, "/api/reports/{id}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)

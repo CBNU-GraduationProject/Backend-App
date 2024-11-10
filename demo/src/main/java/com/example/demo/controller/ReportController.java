@@ -18,9 +18,17 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
-import com.example.demo.entity.HazardData;  // 해당 임포트가 있는지 확인하세요
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+
+@CrossOrigin(
+        origins = {
+                "https://kickx2-frontend-b2evfnacdxh3fjd4.koreacentral-01.azurewebsites.net",
+                "https://kickx2-backend-ezgpc2fyhceae4ev.koreacentral-01.azurewebsites.net"
+        },
+        allowedHeaders = "*",
+        exposedHeaders = "Authorization"
+)
 
 @RestController
 @RequestMapping("/api/reports")
@@ -44,7 +52,22 @@ public class ReportController {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
 
-        // HazardData로 변환할 데이터 준비
+
+        MultiValueMap<String, Object> formData = getStringObjectMultiValueMap(report);
+
+        // HTTP 요청 준비
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
+
+        // HazardData 서비스로 POST 요청 전송
+        String url = hazardDataServiceUrl + "/api/hazarddata/add";
+        restTemplate.postForObject(url, requestEntity, String.class);
+
+        return ResponseEntity.ok("Report approved and added to hazard data!");
+    }
+
+    private static MultiValueMap<String, Object> getStringObjectMultiValueMap(Report report) {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         formData.add("hazardType", report.getDescription());
         formData.add("gps", report.getLatitude() + "," + report.getLongitude());
@@ -61,17 +84,7 @@ public class ReportController {
             };
             formData.add("photo", imageResource);
         }
-
-        // HTTP 요청 준비
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
-
-        // HazardData 서비스로 POST 요청 전송
-        String url = hazardDataServiceUrl + "/api/hazarddata/add";
-        restTemplate.postForObject(url, requestEntity, String.class);
-
-        return ResponseEntity.ok("Report approved and added to hazard data!");
+        return formData;
     }
 
     @PostMapping
@@ -100,7 +113,7 @@ public class ReportController {
         Report savedReport = reportRepository.save(report);
         return ResponseEntity.ok(convertToDto(savedReport));
     }
-
+    @CrossOrigin(origins = "https://kickx2-frontend-b2evfnacdxh3fjd4.koreacentral-01.azurewebsites.net/")
     @GetMapping
     public ResponseEntity<List<ReportRequestDto>> getAllReports() {
         List<Report> reports = reportRepository.findAll();
@@ -135,6 +148,17 @@ public class ReportController {
         return ResponseEntity.ok(convertToDto(report));
     }
 
+
+    // 삭제 기능 추가: 반려된 보고서를 삭제하는 API
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> rejectReport(@PathVariable Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+
+        // 보고서 삭제
+        reportRepository.delete(report);
+        return ResponseEntity.ok("Report rejected and deleted!");
+    }
     private ReportRequestDto convertToDto(Report report) {
         return new ReportRequestDto(
                 report.getId(),
