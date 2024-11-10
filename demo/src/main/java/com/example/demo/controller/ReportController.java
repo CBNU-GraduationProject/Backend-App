@@ -106,6 +106,7 @@ public class ReportController {
         report.setLatitude(latitude);
         report.setLongitude(longitude);
         report.setState(state != null ? state : "미조치");
+        report.setStatus("반려");  // 기본값으로 반려 상태 설정
 
         if (image != null && !image.isEmpty()) {
             report.setImage(image.getBytes());
