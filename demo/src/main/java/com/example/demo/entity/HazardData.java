@@ -17,6 +17,8 @@ public class HazardData {
 
     private String hazardType;
 
+    private String userid;
+
     @Lob
     @Column(columnDefinition="LONGBLOB")
     private byte[] photo;

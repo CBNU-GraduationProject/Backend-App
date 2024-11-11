@@ -6,17 +6,15 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.ReportRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -57,22 +55,31 @@ public class ReportController {
 
         MultiValueMap<String, Object> formData = getStringObjectMultiValueMap(report);
 
-        // HTTP 요청 준비
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(formData, headers);
 
-        String url = hazardDataServiceUrl + "/api/hazarddata/add";
-        restTemplate.postForObject(url, requestEntity, String.class);
+            String url = hazardDataServiceUrl + "/api/hazarddata/add";
+            restTemplate.postForObject(url, requestEntity, String.class);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to add report to hazard data service");
+        }
 
         return ResponseEntity.ok("Report approved and added to hazard data!");
     }
 
+    // 기존 메서드에서 userid 값 추가
     private static MultiValueMap<String, Object> getStringObjectMultiValueMap(Report report) {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         formData.add("hazardType", report.getDescription());
+        formData.add("userid", report.getUser().getId().toString()); // 수정된 부분
         formData.add("gps", report.getLatitude() + "," + report.getLongitude());
-        formData.add("dates", report.getCreatedAt().toString());
+        // LocalDateTime을 String으로 변환
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        String formattedDate = report.getCreatedAt().format(formatter);
+        formData.add("dates", formattedDate);
         formData.add("state", "미조치");
 
         if (report.getImage() != null) {
@@ -87,6 +94,7 @@ public class ReportController {
         }
         return formData;
     }
+
 
     @PostMapping
     public ResponseEntity<ReportRequestDto> createReport(
@@ -106,7 +114,6 @@ public class ReportController {
         report.setLatitude(latitude);
         report.setLongitude(longitude);
         report.setState(state != null ? state : "미조치");
-        report.setStatus("반려");  // 기본값으로 반려 상태 설정
 
         if (image != null && !image.isEmpty()) {
             report.setImage(image.getBytes());
@@ -115,6 +122,7 @@ public class ReportController {
         Report savedReport = reportRepository.save(report);
         return ResponseEntity.ok(convertToDto(savedReport));
     }
+
     @CrossOrigin(origins = "https://kickx2-frontend-b2evfnacdxh3fjd4.koreacentral-01.azurewebsites.net/")
     @GetMapping
     public ResponseEntity<List<ReportRequestDto>> getAllReports() {
