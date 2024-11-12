@@ -1,15 +1,17 @@
 package com.example.demo.config;
 
 
-import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.service.JwtAuthenticationFilter;
+import com.example.demo.service.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,7 +21,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-
     private final JwtTokenProvider jwtTokenProvider; // jwtTokenProvider 주입 추가
 
     @Bean
@@ -27,12 +28,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // 회원가입/로그인 경로만 모두 허용
-                        .requestMatchers("/api/reports/**").permitAll() // `/api/reports`는 인증된 사용자만 접근 가능
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
-
+                        .requestMatchers("/api/auth/login", "/api/auth/signup").permitAll()
+                        .requestMatchers("/api/reports/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/reports/{id}/state").permitAll() // URL 수정
+                        .requestMatchers(HttpMethod.PATCH, "/api/reports/{id}").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class) // JWT 필터 추가
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(Customizer.withDefaults());
 
